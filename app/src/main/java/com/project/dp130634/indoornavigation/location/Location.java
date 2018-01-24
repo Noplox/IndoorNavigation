@@ -1,17 +1,20 @@
 package com.project.dp130634.indoornavigation.location;
 
-public class IndoorLocation {
+public class Location {
 
-    public IndoorLocation(double x, double y, double z, double accuracy, double viewingAngle, double viewingAccuracy) {
+    public Location(double x, double y, double z, double accuracyX, double accuracyY, double accuracyZ, double viewingAngle, double viewingAccuracy, double weight) {
         this.x = x;
         this.y = y;
         this.z = z;
-        this.accuracy = accuracy;
+        this.accuracyX = accuracyX;
+        this.accuracyY = accuracyY;
+        this.accuracyZ = accuracyZ;
         this.viewingAngle = viewingAngle;
         this.viewingAccuracy = viewingAccuracy;
+        this.weight = weight;
     }
 
-    public IndoorLocation() {
+    public Location() {
     }
 
     public double getX() {
@@ -38,12 +41,28 @@ public class IndoorLocation {
         this.z = z;
     }
 
-    public double getAccuracy() {
-        return accuracy;
+    public double getAccuracyX() {
+        return accuracyX;
     }
 
-    public void setAccuracy(double accuracy) {
-        this.accuracy = accuracy;
+    public void setAccuracyX(double accuracyX) {
+        this.accuracyX = accuracyX;
+    }
+
+    public double getAccuracyY() {
+        return accuracyY;
+    }
+
+    public void setAccuracyY(double accuracyY) {
+        this.accuracyY = accuracyY;
+    }
+
+    public double getAccuracyZ() {
+        return accuracyZ;
+    }
+
+    public void setAccuracyZ(double accuracyZ) {
+        this.accuracyZ = accuracyZ;
     }
 
     public double getViewingAngle() {
@@ -62,8 +81,17 @@ public class IndoorLocation {
         this.viewingAccuracy = viewingAccuracy;
     }
 
+    public double getWeight() {
+        return weight;
+    }
+
+    public void setWeight(double weight) {
+        this.weight = weight;
+    }
+
     private double x, y, z;
-    private double accuracy;
+    private double accuracyX, accuracyY, accuracyZ;
     private double viewingAngle;
     private double viewingAccuracy;
+    private double weight;
 }
