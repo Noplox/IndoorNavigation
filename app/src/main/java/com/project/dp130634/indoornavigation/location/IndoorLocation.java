@@ -1,16 +1,14 @@
 package com.project.dp130634.indoornavigation.location;
 
-/**
- * Created by John on 24-Jan-18.
- */
-
 public class IndoorLocation {
 
-    public IndoorLocation(double x, double y, double z, double accuracy) {
+    public IndoorLocation(double x, double y, double z, double accuracy, double viewingAngle, double viewingAccuracy) {
         this.x = x;
         this.y = y;
         this.z = z;
         this.accuracy = accuracy;
+        this.viewingAngle = viewingAngle;
+        this.viewingAccuracy = viewingAccuracy;
     }
 
     public IndoorLocation() {
@@ -48,6 +46,24 @@ public class IndoorLocation {
         this.accuracy = accuracy;
     }
 
+    public double getViewingAngle() {
+        return viewingAngle;
+    }
+
+    public void setViewingAngle(double viewingAngle) {
+        this.viewingAngle = viewingAngle;
+    }
+
+    public double getViewingAccuracy() {
+        return viewingAccuracy;
+    }
+
+    public void setViewingAccuracy(double viewingAccuracy) {
+        this.viewingAccuracy = viewingAccuracy;
+    }
+
     private double x, y, z;
     private double accuracy;
+    private double viewingAngle;
+    private double viewingAccuracy;
 }
