@@ -12,6 +12,7 @@ public class Location {
         this.viewingAngle = viewingAngle;
         this.viewingAccuracy = viewingAccuracy;
         this.weight = weight;
+        this.timestamp = System.currentTimeMillis();
     }
 
     public Location() {
@@ -89,9 +90,18 @@ public class Location {
         this.weight = weight;
     }
 
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+
     private double x, y, z;
     private double accuracyX, accuracyY, accuracyZ;
     private double viewingAngle;
     private double viewingAccuracy;
     private double weight;
+    private long timestamp;
 }
