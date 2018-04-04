@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Service;
 import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
+import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
@@ -12,7 +13,10 @@ import android.support.annotation.Nullable;
 import com.project.dp130634.indoornavigation.location.Location;
 import com.project.dp130634.indoornavigation.location.LocationChangeListener;
 import com.project.dp130634.indoornavigation.location.LocationProvider;
+import com.project.dp130634.indoornavigation.location.bluetooth.util.LocationCalculator;
 
+import java.nio.ByteBuffer;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -27,8 +31,8 @@ public class BluetoothLocationProvider extends Service implements LocationProvid
     private List<LocationChangeListener> locationChangeListeners;
     private Location currentLocation;
 
-    public BluetoothLocationProvider() {
-        bluetoothLocationScanner = new BluetoothLocationScanner(this, this);
+    public BluetoothLocationProvider(Context mainContext) {
+        bluetoothLocationScanner = new BluetoothLocationScanner(mainContext, this);
         bluetoothBeacons = new HashMap<>();
         scanRecords = new HashMap<>();
         locationChangeListeners = new LinkedList<>();
@@ -49,8 +53,8 @@ public class BluetoothLocationProvider extends Service implements LocationProvid
     }
 
     @Override
-    public void addLocationChangeListener(LocationChangeListener l) {
-        locationChangeListeners.add(l);
+    public void addLocationChangeListener(LocationChangeListener locationChangeListener) {
+        locationChangeListeners.add(locationChangeListener);
     }
 
     /**
@@ -93,10 +97,39 @@ public class BluetoothLocationProvider extends Service implements LocationProvid
     @NonNull
     private UUID decodeUuid(ScanRecord scanRecord) {
         byte[] values = scanRecord.getBytes();
-        long mostSigBits = (values[2] << 56) + (values[3] << 48) + (values[4] << 40) + (values[5] << 32)
-                + (values[6] << 24) + (values[7] << 16) + (values[8] << 8) + (values[9]);
-        long leastSigBits = (values[10] << 56) + (values[11] << 48) + (values[12] << 40) + (values[13] << 32)
-                + (values[14] << 24) + (values[15] << 16) + (values[16] << 8) + (values[17]);
+
+        int i;
+        for(i = 1; i < values.length; i++) {
+            if(values[i] == -84 && values[i - 1] == -66) {  //find 0xBEAC, uuid starts after
+                i++;
+                break;
+            }
+        }
+
+        ByteBuffer buffer = ByteBuffer.allocate(8);
+        buffer.put(values[i++]);
+        buffer.put(values[i++]);
+        buffer.put(values[i++]);
+        buffer.put(values[i++]);
+        buffer.put(values[i++]);
+        buffer.put(values[i++]);
+        buffer.put(values[i++]);
+        buffer.put(values[i++]);
+        buffer.flip();
+        long mostSigBits = buffer.getLong();
+
+        buffer.clear();
+        buffer.put(values[i++]);
+        buffer.put(values[i++]);
+        buffer.put(values[i++]);
+        buffer.put(values[i++]);
+        buffer.put(values[i++]);
+        buffer.put(values[i++]);
+        buffer.put(values[i++]);
+        buffer.put(values[i++]);
+        buffer.flip();
+        long leastSigBits = buffer.getLong();
+
         return new UUID(mostSigBits, leastSigBits);
     }
 
@@ -107,6 +140,6 @@ public class BluetoothLocationProvider extends Service implements LocationProvid
     }
 
     private void calculateLocation() {
-
+        currentLocation = LocationCalculator.calculateLocation(scanRecords.values().toArray(new BeaconPacket[scanRecords.size()]));
     }
 }

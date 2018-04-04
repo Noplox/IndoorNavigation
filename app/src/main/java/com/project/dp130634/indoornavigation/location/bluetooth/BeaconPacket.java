@@ -42,12 +42,16 @@ public class BeaconPacket {
     }
 
     public double getDistance() {
+        final double ENVIRONMENTAL_FACTOR = 2.0;
+
+        return Math.pow(10, (beacon.getTxPower() - (double)rssi) / (10d * ENVIRONMENTAL_FACTOR));
+        /*
         double ratio = rssi * 1.0 / beacon.getTxPower();
         if(ratio < 1.0) {
             return Math.pow(ratio, 10);
         } else {
-            double distacne = (0.89976) * Math.pow(ratio, 7.7095) + 0.111;
-            return distacne;
+            return (0.89976) * Math.pow(ratio, 7.7095) + 0.111;
         }
+        */
     }
 }

@@ -16,6 +16,12 @@ public class Location {
     }
 
     public Location() {
+        this.accuracyX = 100;
+        this.accuracyY = 100;
+        this.accuracyZ = 100;
+        this.viewingAccuracy = 360;
+        this.weight = 1;
+        this.timestamp = System.currentTimeMillis();
     }
 
     public double getX() {
