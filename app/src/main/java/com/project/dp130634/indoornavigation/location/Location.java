@@ -1,6 +1,8 @@
 package com.project.dp130634.indoornavigation.location;
 
-public class Location {
+import java.io.Serializable;
+
+public class Location implements Serializable {
 
     public Location(double x, double y, double z, double accuracyX, double accuracyY, double accuracyZ, double viewingAngle, double viewingAccuracy, double weight) {
         this.x = x;

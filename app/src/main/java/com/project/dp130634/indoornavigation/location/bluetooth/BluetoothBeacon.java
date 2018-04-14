@@ -2,9 +2,10 @@ package com.project.dp130634.indoornavigation.location.bluetooth;
 
 import com.project.dp130634.indoornavigation.location.Location;
 
+import java.io.Serializable;
 import java.util.UUID;
 
-public class BluetoothBeacon {
+public class BluetoothBeacon implements Serializable {
 
     private Location location;
     private UUID id;
