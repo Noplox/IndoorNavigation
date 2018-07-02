@@ -2,8 +2,8 @@ package com.project.dp130634.indoornavigation.location.bluetooth.util;
 
 import com.lemmingapex.trilateration.NonLinearLeastSquaresSolver;
 import com.lemmingapex.trilateration.TrilaterationFunction;
-import com.project.dp130634.indoornavigation.location.Location;
 import com.project.dp130634.indoornavigation.location.bluetooth.BeaconPacket;
+import com.project.dp130634.indoornavigation.model.map.Location;
 
 import org.apache.commons.math3.fitting.leastsquares.LeastSquaresOptimizer;
 import org.apache.commons.math3.fitting.leastsquares.LevenbergMarquardtOptimizer;

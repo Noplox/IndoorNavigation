@@ -1,38 +1,77 @@
 package com.project.dp130634.indoornavigation.location.bluetooth;
 
-import android.app.Activity;
 import android.app.Service;
 import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
-import com.project.dp130634.indoornavigation.location.Location;
 import com.project.dp130634.indoornavigation.location.LocationChangeListener;
 import com.project.dp130634.indoornavigation.location.LocationProvider;
 import com.project.dp130634.indoornavigation.location.bluetooth.util.LocationCalculator;
+import com.project.dp130634.indoornavigation.model.map.BluetoothBeacon;
+import com.project.dp130634.indoornavigation.model.map.Location;
 
 import java.nio.ByteBuffer;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 public class BluetoothLocationProvider extends Service implements LocationProvider, BluetoothLocationScanner.LocationScanListener {
 
+    private final String LOG_TAG = "indoornavigation";
+
     private BluetoothLocationScanner bluetoothLocationScanner;
-    private Map<UUID, BluetoothBeacon> bluetoothBeacons;
-    private Map<UUID, BeaconPacket> scanRecords;
+    private Map<BeaconId, BluetoothBeacon> bluetoothBeacons;
+    private Map<BeaconId, BeaconPacket> scanRecords;
     private List<LocationChangeListener> locationChangeListeners;
     private Location currentLocation;
 
+    private class BeaconId {
+        public UUID uuid;
+        public int major;
+        public int minor;
+        public BeaconId(){}
+
+        public BeaconId(UUID uuid, int major, int minor) {
+            this.uuid = uuid;
+            this.major = major;
+            this.minor = minor;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if(!(obj instanceof BeaconId)) {
+                return false;
+            }
+            BeaconId other = (BeaconId) obj;
+            return (
+                    other.uuid.equals(this.uuid) &&
+                    other.major == this.major &&
+                    other.minor == this.minor
+            );
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(uuid, major, minor);
+        }
+
+        @Override
+        public String toString() {
+            return "UUID="+uuid + " major="+major + " minor="+minor;
+        }
+    }
+
     public BluetoothLocationProvider(Context mainContext) {
         bluetoothLocationScanner = new BluetoothLocationScanner(mainContext, this);
+        bluetoothLocationScanner.scanLeDevices();   //Start scanning
         bluetoothBeacons = new HashMap<>();
         scanRecords = new HashMap<>();
         locationChangeListeners = new LinkedList<>();
@@ -43,8 +82,35 @@ public class BluetoothLocationProvider extends Service implements LocationProvid
         currentLocation.setWeight(0);
     }
 
-    public void addBeacon(Location location, UUID id, int txPower) {
-        bluetoothBeacons.put(id, new BluetoothBeacon(location, id, txPower));
+    public void addBeacon(Location location, UUID id, int major, int minor, int txPower) {
+        bluetoothBeacons.put(
+                new BeaconId(
+                        id,
+                        major,
+                        minor
+                ),
+                new BluetoothBeacon(
+                        location,
+                        id,
+                        major,
+                        minor,
+                        txPower
+                )
+        );
+    }
+
+    public void addBeacon(BluetoothBeacon beacon) {
+        bluetoothBeacons.put(
+                new BeaconId (
+                    beacon.getId(),
+                    beacon.getMajor(),
+                    beacon.getMinor()
+                ),
+                beacon);
+    }
+
+    public void clearBeacons() {
+        bluetoothBeacons.clear();
     }
 
     @Override
@@ -63,19 +129,17 @@ public class BluetoothLocationProvider extends Service implements LocationProvid
     @Override
     public void onScanResult(ScanResult scanResult) {
         //Find beacon which sent the packet (by id)
-        UUID beaconUuid = decodeUuid(scanResult.getScanRecord());
-
-        //Add new scan record
-        int rssi = scanResult.getRssi();
-        long timestamp = scanResult.getTimestampNanos() / 1000;
-        BluetoothBeacon packetSender = bluetoothBeacons.get(beaconUuid);
-        if(packetSender == null) {
-            return; //Happens if beacon that sent the packet is not added into the list of beacons
+        boolean success = decodeBeaconPacket(scanResult);
+        if(!success) {
+            return; //Beacon uses different protocol than expected: discard the packet
         }
-        scanRecords.put(beaconUuid, new BeaconPacket(packetSender, rssi, timestamp));
 
         //Adjust projected location
         calculateLocation();
+
+        //Log.d(LOG_TAG, "rssi: " + rssi);
+        Log.d(LOG_TAG, "(" + currentLocation.getX() + ", " + currentLocation.getY() + ", " + currentLocation.getZ() + ")");
+        Log.d(LOG_TAG, "accuracy: (" + currentLocation.getAccuracyX() + ", " + currentLocation.getAccuracyY() + ", " + currentLocation.getAccuracyZ() + ")");
 
         //Broadcast new location to LocationChangeListeners
         for(LocationChangeListener cur : locationChangeListeners) {
@@ -94,43 +158,81 @@ public class BluetoothLocationProvider extends Service implements LocationProvid
         bluetoothLocationScanner.stopScan();
     }
 
-    @NonNull
-    private UUID decodeUuid(ScanRecord scanRecord) {
-        byte[] values = scanRecord.getBytes();
 
-        int i;
-        for(i = 1; i < values.length; i++) {
-            if(values[i] == -84 && values[i - 1] == -66) {  //find 0xBEAC, uuid starts after
-                i++;
-                break;
+    private boolean decodeBeaconPacket(ScanResult scanResult) {
+        try {
+
+            BeaconId beaconId = new BeaconId();
+            byte[] values = scanResult.getScanRecord().getBytes();
+
+            int i = 1;
+            for(; i < values.length; i++) {
+                if(values[i - 1] == 0x02 && values[i] == 0x15) {
+                    i++;
+                    break;
+                }
             }
+
+            ByteBuffer buffer = ByteBuffer.allocate(8);
+            buffer.put(values[i++]);
+            buffer.put(values[i++]);
+            buffer.put(values[i++]);
+            buffer.put(values[i++]);
+            buffer.put(values[i++]);
+            buffer.put(values[i++]);
+            buffer.put(values[i++]);
+            buffer.put(values[i++]);
+            buffer.flip();
+            long mostSigBits = buffer.getLong();
+
+            buffer.clear();
+            buffer.put(values[i++]);
+            buffer.put(values[i++]);
+            buffer.put(values[i++]);
+            buffer.put(values[i++]);
+            buffer.put(values[i++]);
+            buffer.put(values[i++]);
+            buffer.put(values[i++]);
+            buffer.put(values[i++]);
+            buffer.flip();
+            long leastSigBits = buffer.getLong();
+
+            beaconId.uuid =  new UUID(mostSigBits, leastSigBits);
+            beaconId.major = values[i++] * 256 + values[i++];
+            beaconId.minor = values[i++] * 256 + values[i++];
+
+            int txPower = values[i];
+
+            //Add new scan record
+            int rssi = scanResult.getRssi();
+            long timestamp = scanResult.getTimestampNanos() / 1000;
+            BluetoothBeacon packetSender = bluetoothBeacons.get(beaconId);
+            if(packetSender == null) {
+                return false; //Happens if beacon that sent the packet is not added into the list of beacons
+            }
+            scanRecords.put(
+                    beaconId,
+                    new BeaconPacket(
+                            packetSender,
+                            rssi,
+                            txPower,
+                            timestamp
+                    )
+            );
+/*
+            BeaconPacket currentPacket = new BeaconPacket(
+                    packetSender,
+                    rssi,
+                    txPower,
+                    timestamp
+            );
+
+            Log.d(LOG_TAG, "minor: " + currentPacket.getBeacon().getMinor() + " rssi: " + currentPacket.getRssi() + " txPower: " + currentPacket.getTxPower() + " distance: " + currentPacket.getDistance());
+*/
+            return true;
+        } catch(ArrayIndexOutOfBoundsException e) {
+            return false;
         }
-
-        ByteBuffer buffer = ByteBuffer.allocate(8);
-        buffer.put(values[i++]);
-        buffer.put(values[i++]);
-        buffer.put(values[i++]);
-        buffer.put(values[i++]);
-        buffer.put(values[i++]);
-        buffer.put(values[i++]);
-        buffer.put(values[i++]);
-        buffer.put(values[i++]);
-        buffer.flip();
-        long mostSigBits = buffer.getLong();
-
-        buffer.clear();
-        buffer.put(values[i++]);
-        buffer.put(values[i++]);
-        buffer.put(values[i++]);
-        buffer.put(values[i++]);
-        buffer.put(values[i++]);
-        buffer.put(values[i++]);
-        buffer.put(values[i++]);
-        buffer.put(values[i++]);
-        buffer.flip();
-        long leastSigBits = buffer.getLong();
-
-        return new UUID(mostSigBits, leastSigBits);
     }
 
     @Nullable

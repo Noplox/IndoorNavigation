@@ -1,20 +1,25 @@
 package com.project.dp130634.indoornavigation.location.bluetooth;
 
+import com.project.dp130634.indoornavigation.model.map.BluetoothBeacon;
+
 public class BeaconPacket {
     private BluetoothBeacon beacon;
     private long timestamp;
     private int rssi;
+    private int txPower;
 
-    public BeaconPacket(BluetoothBeacon beacon, int rssi) {
+    public BeaconPacket(BluetoothBeacon beacon, int rssi, int txPower) {
             this.beacon = beacon;
             this.rssi = rssi;
             this.timestamp = System.currentTimeMillis();
+            this.txPower = txPower;
     }
 
-    public BeaconPacket(BluetoothBeacon beacon, int rssi, long timestamp) {
+    public BeaconPacket(BluetoothBeacon beacon, int rssi, int txPower, long timestamp) {
         this.beacon = beacon;
         this.timestamp = timestamp;
         this.rssi = rssi;
+        this.txPower = txPower;
     }
 
     public BluetoothBeacon getBeacon() {
@@ -41,10 +46,18 @@ public class BeaconPacket {
         this.rssi = rssi;
     }
 
+    public int getTxPower() {
+        return txPower;
+    }
+
+    public void setTxPower(int txPower) {
+        this.txPower = txPower;
+    }
+
     public double getDistance() {
         final double ENVIRONMENTAL_FACTOR = 2.0;
 
-        return Math.pow(10, (beacon.getTxPower() - (double)rssi) / (10d * ENVIRONMENTAL_FACTOR));
+        return Math.pow(10, (txPower - (double)rssi) / (10d * ENVIRONMENTAL_FACTOR));
         /*
         double ratio = rssi * 1.0 / beacon.getTxPower();
         if(ratio < 1.0) {

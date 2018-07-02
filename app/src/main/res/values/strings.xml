@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">IndoorNavigation</string>
+    <string name="openMap">Open map</string>
 </resources>

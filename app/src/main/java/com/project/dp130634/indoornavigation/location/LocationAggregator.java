@@ -1,5 +1,7 @@
 package com.project.dp130634.indoornavigation.location;
 
+import com.project.dp130634.indoornavigation.model.map.Location;
+
 import java.util.ArrayList;
 import java.util.List;
 

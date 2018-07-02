@@ -1,4 +1,4 @@
-package com.project.dp130634.indoornavigation.location;
+package com.project.dp130634.indoornavigation.model.map;
 
 import java.io.Serializable;
 
