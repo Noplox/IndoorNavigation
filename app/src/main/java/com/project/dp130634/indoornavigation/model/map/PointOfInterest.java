@@ -9,20 +9,17 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 public class PointOfInterest extends MapElement implements Serializable {
-    static final long serialVersionUID =-3169145537364315550L;
     private Point2d location;
     private String name;
-    private String description;
-    private transient Bitmap image;
+    private String contentURL;
 
     public PointOfInterest() {
     }
 
-    public PointOfInterest(Point2d location, String name, String description, Bitmap image) {
+    public PointOfInterest(Point2d location, String name, String contentURL) {
         this.location = location;
         this.name = name;
-        this.description = description;
-        this.image = image;
+        this.contentURL = contentURL;
     }
 
     public Point2d getLocation() {
@@ -33,14 +30,6 @@ public class PointOfInterest extends MapElement implements Serializable {
         this.location = location;
     }
 
-    public Bitmap getImage() {
-        return image;
-    }
-
-    public void setImage(Bitmap image) {
-        this.image = image;
-    }
-
     public String getName() {
         return name;
     }
@@ -49,34 +38,16 @@ public class PointOfInterest extends MapElement implements Serializable {
         this.name = name;
     }
 
-    public String getDescription() {
-        return description;
+    public String getContentURL() {
+        return contentURL;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    private void writeObject(ObjectOutputStream out) throws IOException {
-        out.defaultWriteObject();
-        if(image != null) {
-            out.writeInt(1);
-            image.compress(Bitmap.CompressFormat.PNG, 100, out);
-        }
-    }
-
-    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        final int imageCnt = in.readInt();
-        if(imageCnt == 1) {
-            BitmapFactory.decodeStream(in);
-        }
+    public void setContentURL(String contentURL) {
+        this.contentURL = contentURL;
     }
 
     @Override
     public String toString() {
         return "Point of interest \"" + name + '\"';
     }
-    
-    
 }

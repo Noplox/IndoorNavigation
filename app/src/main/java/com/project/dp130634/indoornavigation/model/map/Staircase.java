@@ -46,5 +46,4 @@ public class Staircase extends MapElement implements Serializable {
     public String toString() {
         return "Staircase{" + "upperLevel=" + upperLevel + ", lowerLevel=" + lowerLevel + '}';
     }
-    
 }

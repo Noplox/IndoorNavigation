@@ -13,6 +13,9 @@ import java.util.List;
 
 
 public class Level implements Serializable {
+    //Serial UIDs are specified in classes which differ from the ones in the mapCreator
+    //Usually due to different implementations of some concepts between Android and native Java
+    //e.g. images
     static final long serialVersionUID =-4032048629470738669L;
     
     public class ImageContainer implements Serializable {
@@ -51,17 +54,9 @@ public class Level implements Serializable {
     private List<Staircase> stairs;
     private List<BluetoothBeacon> bluetoothBeacons;
     private String name;
-    //variable to store floorplan in jpg/png
+    //variable to store floor plan in jpg/png
     private ImageContainer image;
-/*
-    public Level(String name) {
-        this.name = name;
-        obstacles = new ArrayList<>();
-        pointsOfInterest = new ArrayList<>();
-        stairs = new ArrayList<>();
-        bluetoothBeacons = new ArrayList<>();
-    }
-*/
+
     public Level(String name, double floorHeight) {
         this.name = name;
         this.floorHeight = floorHeight;

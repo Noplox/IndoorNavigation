@@ -3,7 +3,7 @@ package com.project.dp130634.indoornavigation.model.map;
 import java.io.Serializable;
 
 public class Checkpoint extends MapElement implements Serializable {
-    private static double CHECKPOINT_TRIGGER_RANGE;
+    private static double checkpointTriggerRange;
 
     private Level level;
     private Point2d location;
@@ -16,12 +16,12 @@ public class Checkpoint extends MapElement implements Serializable {
         this.location = location;
     }
 
-    public static double getCHECKPOINT_TRIGGER_RANGE() {
-        return CHECKPOINT_TRIGGER_RANGE;
+    public static double getCheckpointTriggerRange() {
+        return checkpointTriggerRange;
     }
 
-    public static void setCHECKPOINT_TRIGGER_RANGE(double CHECKPOINT_TRIGGER_RANGE) {
-        Checkpoint.CHECKPOINT_TRIGGER_RANGE = CHECKPOINT_TRIGGER_RANGE;
+    public static void setCheckpointTriggerRange(double checkpointTriggerRange) {
+        Checkpoint.checkpointTriggerRange = checkpointTriggerRange;
     }
 
     public Level getLevel() {

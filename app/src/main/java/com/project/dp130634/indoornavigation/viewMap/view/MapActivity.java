@@ -12,6 +12,7 @@ import android.widget.ImageView;
 
 import com.project.dp130634.indoornavigation.MainActivity;
 import com.project.dp130634.indoornavigation.R;
+import com.project.dp130634.indoornavigation.mapDownload.QrScanActivity;
 import com.project.dp130634.indoornavigation.model.map.Map;
 import com.project.dp130634.indoornavigation.viewMap.ViewInterface;
 import com.project.dp130634.indoornavigation.viewMap.controller.Controller;
@@ -30,11 +31,11 @@ public class MapActivity extends AppCompatActivity implements ViewInterface {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
 
-        Uri mapUri = (Uri) getIntent().getExtras().get(MainActivity.KEY_MAP_URI);
+        //Uri mapUri = (Uri) getIntent().getExtras().get(MainActivity.KEY_MAP_URI);
+        File mapFile = (File) getIntent().getExtras().get(QrScanActivity.KEY_MAP_FILE);
 
         //String path = mapUri.getPath();
-        try(InputStream fin = getContentResolver().openInputStream(mapUri);
-        //try(FileInputStream fin = new FileInputStream(path);
+        try(InputStream fin = new FileInputStream(mapFile);
             ObjectInputStream ois = new ObjectInputStream(fin)) {
             Map map = (Map)ois.readObject();
             controller = new Controller(this, this);
@@ -43,7 +44,7 @@ public class MapActivity extends AppCompatActivity implements ViewInterface {
             e.printStackTrace();
         }
 
-        transformationHandler = new TransformationHandler(this);
+        TransformationHandler transformationHandler = new TransformationHandler(this);
 
         mapImageView = (MapImageView)findViewById(R.id.mapImageView);
         mapImageView.setModel(controller.getModel());
@@ -61,5 +62,4 @@ public class MapActivity extends AppCompatActivity implements ViewInterface {
 
     private Controller controller;
     private MapImageView mapImageView;
-    private TransformationHandler transformationHandler;
 }

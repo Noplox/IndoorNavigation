@@ -15,6 +15,7 @@ import android.widget.Toast;
 
 import com.project.dp130634.indoornavigation.location.LocationChangeListener;
 import com.project.dp130634.indoornavigation.location.bluetooth.BluetoothLocationProvider;
+import com.project.dp130634.indoornavigation.mapDownload.QrScanActivity;
 import com.project.dp130634.indoornavigation.model.map.Location;
 import com.project.dp130634.indoornavigation.viewMap.view.MapActivity;
 
@@ -25,6 +26,7 @@ import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity implements LocationChangeListener {
 
+    private static final int REQUEST_QR_SCAN = 3;
     private static final int REQUEST_CHOOSE_MAP = 2;
     private static final int REQUEST_ENABLE_BT = 1;
 
@@ -63,13 +65,19 @@ public class MainActivity extends AppCompatActivity implements LocationChangeLis
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.openMap: {
-                Intent intent = new Intent()
-                        .setType("*/*")
-                        .setAction(Intent.ACTION_GET_CONTENT);
+            case R.id.openMap:
+            {
+                Intent intent = new Intent(this, QrScanActivity.class);
 
-                startActivityForResult(Intent.createChooser(intent, "Select a map file"), REQUEST_CHOOSE_MAP);
-                return true;
+                startActivityForResult(intent, REQUEST_QR_SCAN);
+
+                //File chooser intent below
+//                Intent intent = new Intent()
+//                        .setType("*/*")
+//                        .setAction(Intent.ACTION_GET_CONTENT);
+//
+//                startActivityForResult(Intent.createChooser(intent, "Select a map file"), REQUEST_CHOOSE_MAP);
+//                return true;
             }
             default: {
                 return super.onOptionsItemSelected(item);
@@ -84,26 +92,6 @@ public class MainActivity extends AppCompatActivity implements LocationChangeLis
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-/*
-        if(requestCode == REQUEST_ENABLE_BT && resultCode == Activity.RESULT_OK) {
-            locationProvider = new BluetoothLocationProvider(this);
-            locationProvider.addLocationChangeListener(this);
-
-            //Adding tablet as beacon
-            Location tabletLocation = new Location(0, 0, 0, 0, 0, 0, 0, 0, 1);
-            UUID tabletUUID = new UUID(0x284144db3b5d4c0bl, 0x85748f248b70819el);
-
-
-
-            //Adding Lenovo phone as beacon
-            Location lenovoLocation = new Location(1, 1, 0, 0, 0, 0, 0, 0, 1);
-            UUID lenovoUUID = new UUID(0xc56640bc061443cel, 0xac5f39986cb08bd9l);
-
-            locationProvider.addBeacon(tabletLocation, tabletUUID, 0, 0, -69);
-            locationProvider.addBeacon(lenovoLocation, lenovoUUID, 0, 0, -69);
-            locationProvider.onStartCommand(null, 0, 0);
-        }
-*/
         if(requestCode == REQUEST_ENABLE_BT && resultCode != Activity.RESULT_OK) {
             enableBluetooth();
         }

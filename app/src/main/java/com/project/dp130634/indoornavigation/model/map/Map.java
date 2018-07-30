@@ -5,11 +5,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Map implements Serializable {
-    static final long serialVersionUID =-8562072436825361120L;
     private final List<Level> levels;
     private final List<Route> routes;
     private final List<Elevator> elevators;
     private String name;
+    private int compassRotation;
 
     public Map(String name) {
         this.levels = new ArrayList<>();
@@ -54,5 +54,13 @@ public class Map implements Serializable {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public int getCompassRotation() {
+        return compassRotation;
+    }
+
+    public void setCompassRotation(int compassRotation) {
+        this.compassRotation = compassRotation;
     }
 }
