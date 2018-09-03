@@ -1,33 +1,26 @@
 package com.project.dp130634.indoornavigation.location.bluetooth;
 
+import android.util.Log;
+
 import com.project.dp130634.indoornavigation.model.map.BluetoothBeacon;
 
 public class BeaconPacket {
-    private BluetoothBeacon beacon;
-    private long timestamp;
+    final static double ENVIRONMENTAL_FACTOR = 2.0;
+
     private int rssi;
     private int txPower;
+    private long timestamp;
 
-    public BeaconPacket(BluetoothBeacon beacon, int rssi, int txPower) {
-            this.beacon = beacon;
+    public BeaconPacket(int rssi, int txPower) {
             this.rssi = rssi;
-            this.timestamp = System.currentTimeMillis();
             this.txPower = txPower;
+            this.timestamp = System.currentTimeMillis();
     }
 
-    public BeaconPacket(BluetoothBeacon beacon, int rssi, int txPower, long timestamp) {
-        this.beacon = beacon;
-        this.timestamp = timestamp;
+    public BeaconPacket(int rssi, int txPower, long timestamp) {
         this.rssi = rssi;
         this.txPower = txPower;
-    }
-
-    public BluetoothBeacon getBeacon() {
-        return beacon;
-    }
-
-    public void setBeacon(BluetoothBeacon beacon) {
-        this.beacon = beacon;
+        this.timestamp = timestamp;
     }
 
     public long getTimestamp() {
@@ -55,16 +48,7 @@ public class BeaconPacket {
     }
 
     public double getDistance() {
-        final double ENVIRONMENTAL_FACTOR = 2.0;
 
         return Math.pow(10, (txPower - (double)rssi) / (10d * ENVIRONMENTAL_FACTOR));
-        /*
-        double ratio = rssi * 1.0 / beacon.getTxPower();
-        if(ratio < 1.0) {
-            return Math.pow(ratio, 10);
-        } else {
-            return (0.89976) * Math.pow(ratio, 7.7095) + 0.111;
-        }
-        */
     }
 }

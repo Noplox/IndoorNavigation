@@ -3,6 +3,7 @@ package com.project.dp130634.indoornavigation.viewMap.controller;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MotionEvent;
 
@@ -66,13 +67,36 @@ public class Controller extends Thread implements LocationChangeListener {
         //which takes a history of previous locations, calculates speed
         //and checks if someone walked through a wall or teleported
         model.setMyLocation(l);
-        //Change floor according to measured Z coordinate
+        Level cur = findLocationLevel(l);
+        if(cur != null) {
+            model.setCurrentLevel(cur);
+        }
     }
 
     public boolean onTouch(MotionEvent event) {
         event.getAction();
 
         return true;
+    }
+
+    @Nullable
+    private Level findLocationLevel(Location loc) {
+        Level retVal = null;
+
+        for(Level cur : model.getMap().getLevels()) {
+            if(retVal == null) {
+                if(loc.getZ() > cur.getFloorHeight()) {
+                    retVal = cur;
+                }
+            } else {
+                if(loc.getZ() > cur.getFloorHeight() && cur.getFloorHeight() < retVal.getFloorHeight()) {
+                    retVal = cur;
+                }
+            }
+        }
+
+        //function returns null if calculated location is below every level
+        return retVal;
     }
 
 

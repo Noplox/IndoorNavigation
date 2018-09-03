@@ -82,6 +82,9 @@ public final class QrScanActivity extends AppCompatActivity implements BarcodeGr
     private long enqueueDownload;
     private DownloadManager downloadManager;
 
+    //Variable guarding from multiple file downloads
+    private boolean scanned = false;
+
     /**
      * Initializes the UI and creates the detector pipeline.
      */
@@ -456,14 +459,17 @@ public final class QrScanActivity extends AppCompatActivity implements BarcodeGr
 
     @Override
     public void onBarcodeDetected(Barcode barcode) {
-        Log.v(TAG, "Code detected. Link: " + barcode.rawValue);
+        if(!scanned) {
+            scanned = true;
+            Log.v(TAG, "Code detected. Link: " + barcode.rawValue);
 
-        downloadManager = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
-        Uri mapUri = Uri.parse(barcode.rawValue);
-        DownloadManager.Request request = new DownloadManager.Request(mapUri);
-        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE);
-        request.setDestinationInExternalPublicDir(TEMP_DIR, "temp.map");
-        enqueueDownload = downloadManager.enqueue(request);
+            downloadManager = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+            Uri mapUri = Uri.parse(barcode.rawValue);
+            DownloadManager.Request request = new DownloadManager.Request(mapUri);
+            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE);
+            request.setDestinationInExternalPublicDir(TEMP_DIR, "temp.map");
+            enqueueDownload = downloadManager.enqueue(request);
+        }
     }
 
     private boolean copyFile(File src, File dst) {

@@ -28,18 +28,17 @@ public class BluetoothLocationProvider extends Service implements LocationProvid
     private final String LOG_TAG = "indoornavigation";
 
     private BluetoothLocationScanner bluetoothLocationScanner;
-    private Map<BeaconId, BluetoothBeacon> bluetoothBeacons;
-    private Map<BeaconId, BeaconPacket> scanRecords;
+    private Map<BeaconId, BeaconPacketList> bluetoothBeacons;
     private List<LocationChangeListener> locationChangeListeners;
     private Location currentLocation;
 
     private class BeaconId {
-        public UUID uuid;
-        public int major;
-        public int minor;
-        public BeaconId(){}
+        UUID uuid;
+        int major;
+        int minor;
+        BeaconId(){}
 
-        public BeaconId(UUID uuid, int major, int minor) {
+        BeaconId(UUID uuid, int major, int minor) {
             this.uuid = uuid;
             this.major = major;
             this.minor = minor;
@@ -73,7 +72,6 @@ public class BluetoothLocationProvider extends Service implements LocationProvid
         bluetoothLocationScanner = new BluetoothLocationScanner(mainContext, this);
         bluetoothLocationScanner.scanLeDevices();   //Start scanning
         bluetoothBeacons = new HashMap<>();
-        scanRecords = new HashMap<>();
         locationChangeListeners = new LinkedList<>();
         currentLocation = new Location();
         currentLocation.setAccuracyX(100);
@@ -83,30 +81,28 @@ public class BluetoothLocationProvider extends Service implements LocationProvid
     }
 
     public void addBeacon(Location location, UUID id, int major, int minor, int txPower) {
+        BeaconId beaconId = new BeaconId(id, major, minor);
+        BeaconPacketList packetList = new BeaconPacketList(
+                new BluetoothBeacon(location, id, major, minor, txPower));
+
         bluetoothBeacons.put(
-                new BeaconId(
-                        id,
-                        major,
-                        minor
-                ),
-                new BluetoothBeacon(
-                        location,
-                        id,
-                        major,
-                        minor,
-                        txPower
-                )
+                beaconId,
+                packetList
         );
     }
 
     public void addBeacon(BluetoothBeacon beacon) {
+        BeaconId beaconId = new BeaconId (beacon.getId(), beacon.getMajor(), beacon.getMinor());
+
+        BeaconPacketList packetList = new BeaconPacketList(beacon);
+
         bluetoothBeacons.put(
                 new BeaconId (
                     beacon.getId(),
                     beacon.getMajor(),
                     beacon.getMinor()
                 ),
-                beacon);
+                packetList);
     }
 
     public void clearBeacons() {
@@ -131,15 +127,15 @@ public class BluetoothLocationProvider extends Service implements LocationProvid
         //Find beacon which sent the packet (by id)
         boolean success = decodeBeaconPacket(scanResult);
         if(!success) {
-            return; //Beacon uses different protocol than expected: discard the packet
+            return; //Scanned beacon is not in our map
         }
 
         //Adjust projected location
         calculateLocation();
 
-        //Log.d(LOG_TAG, "rssi: " + rssi);
-        Log.d(LOG_TAG, "(" + currentLocation.getX() + ", " + currentLocation.getY() + ", " + currentLocation.getZ() + ")");
-        Log.d(LOG_TAG, "accuracy: (" + currentLocation.getAccuracyX() + ", " + currentLocation.getAccuracyY() + ", " + currentLocation.getAccuracyZ() + ")");
+//        Log.d(LOG_TAG, "rssi: " + rssi);
+//        Log.d(LOG_TAG, "(" + currentLocation.getX() + ", " + currentLocation.getY() + ", " + currentLocation.getZ() + ")");
+//        Log.d(LOG_TAG, "accuracy: (" + currentLocation.getAccuracyX() + ", " + currentLocation.getAccuracyY() + ", " + currentLocation.getAccuracyZ() + ")");
 
         //Broadcast new location to LocationChangeListeners
         for(LocationChangeListener cur : locationChangeListeners) {
@@ -198,37 +194,32 @@ public class BluetoothLocationProvider extends Service implements LocationProvid
             long leastSigBits = buffer.getLong();
 
             beaconId.uuid =  new UUID(mostSigBits, leastSigBits);
-            beaconId.major = values[i++] * 256 + values[i++];
-            beaconId.minor = values[i++] * 256 + values[i++];
+            int majorHigherByte = values[i++] & 0xFF;
+            int majorLowerByte = values[i++] & 0xFF;
+            beaconId.major = majorHigherByte * 256 + majorLowerByte;
+
+            int minorHigherByte = values[i++] & 0xFF;
+            int minorLowerByte = values[i++] & 0xFF;
+            beaconId.minor = minorHigherByte * 256 + minorLowerByte;
 
             int txPower = values[i];
 
             //Add new scan record
             int rssi = scanResult.getRssi();
-            long timestamp = scanResult.getTimestampNanos() / 1000;
-            BluetoothBeacon packetSender = bluetoothBeacons.get(beaconId);
-            if(packetSender == null) {
+            BeaconPacketList beaconPacketList = bluetoothBeacons.get(beaconId);
+            if(beaconPacketList == null) {
                 return false; //Happens if beacon that sent the packet is not added into the list of beacons
             }
-            scanRecords.put(
-                    beaconId,
+
+            beaconPacketList.addBeaconPacket(
                     new BeaconPacket(
-                            packetSender,
                             rssi,
-                            txPower,
-                            timestamp
+                            txPower
                     )
             );
-/*
-            BeaconPacket currentPacket = new BeaconPacket(
-                    packetSender,
-                    rssi,
-                    txPower,
-                    timestamp
-            );
 
-            Log.d(LOG_TAG, "minor: " + currentPacket.getBeacon().getMinor() + " rssi: " + currentPacket.getRssi() + " txPower: " + currentPacket.getTxPower() + " distance: " + currentPacket.getDistance());
-*/
+            Log.d(LOG_TAG, "Major: " + beaconPacketList.getBeacon().getMajor() + " rssi: " + rssi);
+
             return true;
         } catch(ArrayIndexOutOfBoundsException e) {
             return false;
@@ -242,6 +233,10 @@ public class BluetoothLocationProvider extends Service implements LocationProvid
     }
 
     private void calculateLocation() {
-        currentLocation = LocationCalculator.calculateLocation(scanRecords.values().toArray(new BeaconPacket[scanRecords.size()]));
+
+        Location newLocation = LocationCalculator.calculateLocation(bluetoothBeacons.values().toArray(new BeaconPacketList[bluetoothBeacons.size()]));
+        if(newLocation != null) {
+            currentLocation = newLocation;
+        }
     }
 }
