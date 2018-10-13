@@ -70,7 +70,7 @@ public class MapImageView extends AppCompatImageView {
         }
 
         //Obstacles
-        paint.setColor(Color.GRAY);
+        paint.setColor(Color.LTGRAY);
         paint.setStyle(Paint.Style.FILL);
         for(Obstacle cur : model.getCurrentLevel().getObstacles()) {
             Path polygon = new Path();

@@ -1,7 +1,6 @@
 package com.project.dp130634.indoornavigation.location.bluetooth;
 
 import android.app.Service;
-import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.content.Intent;
@@ -25,11 +24,9 @@ import java.util.UUID;
 
 public class BluetoothLocationProvider extends Service implements LocationProvider, BluetoothLocationScanner.LocationScanListener {
 
-    private final String LOG_TAG = "indoornavigation";
-
     private BluetoothLocationScanner bluetoothLocationScanner;
     private Map<BeaconId, BeaconPacketList> bluetoothBeacons;
-    private List<LocationChangeListener> locationChangeListeners;
+    private List<LocationChangeListener> locationListeners;
     private Location currentLocation;
 
     private class BeaconId {
@@ -72,7 +69,7 @@ public class BluetoothLocationProvider extends Service implements LocationProvid
         bluetoothLocationScanner = new BluetoothLocationScanner(mainContext, this);
         bluetoothLocationScanner.scanLeDevices();   //Start scanning
         bluetoothBeacons = new HashMap<>();
-        locationChangeListeners = new LinkedList<>();
+        locationListeners = new LinkedList<>();
         currentLocation = new Location();
         currentLocation.setAccuracyX(100);
         currentLocation.setAccuracyY(100);
@@ -97,11 +94,7 @@ public class BluetoothLocationProvider extends Service implements LocationProvid
         BeaconPacketList packetList = new BeaconPacketList(beacon);
 
         bluetoothBeacons.put(
-                new BeaconId (
-                    beacon.getId(),
-                    beacon.getMajor(),
-                    beacon.getMinor()
-                ),
+                beaconId,
                 packetList);
     }
 
@@ -116,7 +109,7 @@ public class BluetoothLocationProvider extends Service implements LocationProvid
 
     @Override
     public void addLocationChangeListener(LocationChangeListener locationChangeListener) {
-        locationChangeListeners.add(locationChangeListener);
+        locationListeners.add(locationChangeListener);
     }
 
     /**
@@ -131,15 +124,16 @@ public class BluetoothLocationProvider extends Service implements LocationProvid
         }
 
         //Adjust projected location
-        calculateLocation();
+        Location newLocation = LocationCalculator.calculateLocation(bluetoothBeacons.values().toArray(new BeaconPacketList[bluetoothBeacons.size()]));
+        if(newLocation != null) {
+            currentLocation = newLocation;
 
-//        Log.d(LOG_TAG, "rssi: " + rssi);
-//        Log.d(LOG_TAG, "(" + currentLocation.getX() + ", " + currentLocation.getY() + ", " + currentLocation.getZ() + ")");
-//        Log.d(LOG_TAG, "accuracy: (" + currentLocation.getAccuracyX() + ", " + currentLocation.getAccuracyY() + ", " + currentLocation.getAccuracyZ() + ")");
-
-        //Broadcast new location to LocationChangeListeners
-        for(LocationChangeListener cur : locationChangeListeners) {
-            cur.onLocationChange(currentLocation);
+            //Broadcast new location to LocationChangeListeners
+            for (LocationChangeListener cur : locationListeners) {
+                cur.onLocationChange(currentLocation);
+            }
+        } else {
+            Log.w(BluetoothLocationProvider.class.getSimpleName(), "calculation failed");
         }
     }
 
@@ -218,8 +212,6 @@ public class BluetoothLocationProvider extends Service implements LocationProvid
                     )
             );
 
-            Log.d(LOG_TAG, "Major: " + beaconPacketList.getBeacon().getMajor() + " rssi: " + rssi);
-
             return true;
         } catch(ArrayIndexOutOfBoundsException e) {
             return false;
@@ -232,11 +224,7 @@ public class BluetoothLocationProvider extends Service implements LocationProvid
         return null;
     }
 
-    private void calculateLocation() {
-
-        Location newLocation = LocationCalculator.calculateLocation(bluetoothBeacons.values().toArray(new BeaconPacketList[bluetoothBeacons.size()]));
-        if(newLocation != null) {
-            currentLocation = newLocation;
-        }
+    private static double distance(Location loc1, Location loc2) {
+        return Math.sqrt(Math.pow(loc2.getX() - loc1.getX(), 2) + Math.pow(loc2.getY() - loc1.getY(), 2) + Math.pow(loc2.getZ() - loc1.getZ(), 2));
     }
 }

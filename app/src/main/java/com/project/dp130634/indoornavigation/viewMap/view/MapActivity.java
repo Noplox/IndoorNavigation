@@ -31,7 +31,6 @@ public class MapActivity extends AppCompatActivity implements ViewInterface {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
 
-        //Uri mapUri = (Uri) getIntent().getExtras().get(MainActivity.KEY_MAP_URI);
         File mapFile = (File) getIntent().getExtras().get(QrScanActivity.KEY_MAP_FILE);
 
         //String path = mapUri.getPath();

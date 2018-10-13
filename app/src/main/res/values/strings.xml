@@ -5,4 +5,5 @@
     <string name="low_storage_error">Face detector dependencies cannot be downloaded due to low device storage</string>
     <string name="no_camera_permission">This application cannot run because it does not have the camera permission.  The application will now exit.</string>
     <string name="ok">OK</string>
+    <string name="no_ble_feature">Unsupported device. Bluetooth low energy not found.</string>
 </resources>

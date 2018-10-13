@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class MainActivity extends AppCompatActivity implements LocationChangeListener {
+public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_QR_SCAN = 3;
     private static final int REQUEST_CHOOSE_MAP = 2;
@@ -32,25 +32,13 @@ public class MainActivity extends AppCompatActivity implements LocationChangeLis
 
     public static final String KEY_MAP_URI = "com.project.dp130634.indoornavigation.MAP_URI";
 
-    private ArrayAdapter<String> scanResultAdapter;
-    private List<String> scanResultList;
-    private BluetoothLocationProvider locationProvider;
-
-    private int numOfReads = 0;
-    private double avg = 0;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        ListView scanResultListView = (ListView) findViewById(R.id.scanListView);
-        scanResultList = new ArrayList<>();
-        scanResultAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, scanResultList);
-        scanResultListView.setAdapter(scanResultAdapter);
-
         if(!(getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE))) {
-            Toast.makeText(this, "No BLE", Toast.LENGTH_LONG);
+            Toast.makeText(this, R.string.no_ble_feature, Toast.LENGTH_LONG);
         }
 
         enableBluetooth();
@@ -70,14 +58,6 @@ public class MainActivity extends AppCompatActivity implements LocationChangeLis
                 Intent intent = new Intent(this, QrScanActivity.class);
 
                 startActivityForResult(intent, REQUEST_QR_SCAN);
-
-                //File chooser intent below
-//                Intent intent = new Intent()
-//                        .setType("*/*")
-//                        .setAction(Intent.ACTION_GET_CONTENT);
-//
-//                startActivityForResult(Intent.createChooser(intent, "Select a map file"), REQUEST_CHOOSE_MAP);
-//                return true;
             }
             default: {
                 return super.onOptionsItemSelected(item);
@@ -92,31 +72,18 @@ public class MainActivity extends AppCompatActivity implements LocationChangeLis
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
         if(requestCode == REQUEST_ENABLE_BT && resultCode != Activity.RESULT_OK) {
             enableBluetooth();
         }
+
         if(requestCode == REQUEST_CHOOSE_MAP && resultCode == Activity.RESULT_OK) {
             Uri selectedFileUri = data.getData();
-            //File mapFile = new File(selectedFileUri.getPath());
+
             Intent mapIntent = new Intent(this, MapActivity.class)
                     .putExtra(KEY_MAP_URI, selectedFileUri);
 
             startActivity(mapIntent);
         }
-    }
-
-    @Override
-    public void onLocationChange(Location l) {
-        DecimalFormat decFormat = new DecimalFormat("###.###");
-
-        avg = ((avg * numOfReads) + l.getAccuracyX()) / (++numOfReads);
-
-        String newResult = "Location: (" + decFormat.format(l.getX()) + ", " + decFormat.format(l.getY()) + ", " + decFormat.format(l.getZ()) + ")\n" +
-                "Accuracy: (" + decFormat.format(l.getAccuracyX()) + ", " + decFormat.format(l.getAccuracyY()) + ", " +  decFormat.format(l.getAccuracyZ()) + ")\n" +
-                "Avg: " + decFormat.format(avg);
-
-        scanResultList.add(newResult);
-        scanResultAdapter.notifyDataSetChanged();
-
     }
 }

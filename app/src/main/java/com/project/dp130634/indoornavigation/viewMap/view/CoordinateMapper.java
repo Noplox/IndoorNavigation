@@ -99,15 +99,6 @@ public class CoordinateMapper {
     }
     
     public void rotate(int degrees) {
-        // [0, 360]
-        /*
-        rotation += degrees;
-        rotation %= 360;
-        if(rotation <= 0) {
-            rotation = 360 - rotation;
-        }
-        */
-
         // [-180, 180]
         rotation += degrees;
         if(rotation >= 180) {
@@ -116,8 +107,6 @@ public class CoordinateMapper {
         if(rotation <= -180 && degrees < 0) {
             rotation = 180;
         }
-
-        System.out.println("rotation: " + rotation);
     }
     
     private CoordinateMapper() {}
@@ -233,12 +222,10 @@ public class CoordinateMapper {
     }
 
     public static double pointDistance(Point a, Point b){
-        //Math.sqrt(Math.pow((location1.getX() - location2.getX()), 2) + Math.pow((location1.getY() - location2.getY()), 2));
         return Math.sqrt(Math.pow((a.x - b.x), 2) + Math.pow((a.y - b.y), 2));
     }
     
     public static double pointDistance(Point2d a, Point2d b){
-        //Math.sqrt(Math.pow((location1.getX() - location2.getX()), 2) + Math.pow((location1.getY() - location2.getY()), 2));
         return Math.sqrt(Math.pow((a.x - b.x), 2) + Math.pow((a.y - b.y), 2));
     }
 }

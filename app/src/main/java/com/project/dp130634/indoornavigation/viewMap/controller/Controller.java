@@ -63,20 +63,11 @@ public class Controller extends Thread implements LocationChangeListener {
 
     @Override
     public void onLocationChange(Location l) {
-        //Idea for precision: Run locations through a location aggregator
-        //which takes a history of previous locations, calculates speed
-        //and checks if someone walked through a wall or teleported
         model.setMyLocation(l);
         Level cur = findLocationLevel(l);
         if(cur != null) {
             model.setCurrentLevel(cur);
         }
-    }
-
-    public boolean onTouch(MotionEvent event) {
-        event.getAction();
-
-        return true;
     }
 
     @Nullable

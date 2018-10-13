@@ -1,8 +1,9 @@
 package com.project.dp130634.indoornavigation.location.bluetooth.util;
 
+import android.support.annotation.Nullable;
+
 import com.lemmingapex.trilateration.NonLinearLeastSquaresSolver;
 import com.lemmingapex.trilateration.TrilaterationFunction;
-import com.project.dp130634.indoornavigation.location.bluetooth.BeaconPacket;
 import com.project.dp130634.indoornavigation.location.bluetooth.BeaconPacketList;
 import com.project.dp130634.indoornavigation.model.map.Location;
 
@@ -10,17 +11,25 @@ import org.apache.commons.math3.fitting.leastsquares.LeastSquaresOptimizer;
 import org.apache.commons.math3.fitting.leastsquares.LevenbergMarquardtOptimizer;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.SingularMatrixException;
+import org.jetbrains.annotations.NotNull;
 
 public class LocationCalculator {
-    public static Location calculateLocation(BeaconPacketList scanRecords[]) {
-        if(scanRecords.length == 0) {
+
+    private static double positions[][];
+    private static double distances[];
+    private static int validScanRecords;
+
+    @Nullable
+    public synchronized static Location calculateLocation(@NotNull BeaconPacketList scanRecords[]) {
+
+        filterScanRecords(scanRecords);
+
+        if(validScanRecords == 0) {
             return null;
         }
-        if(scanRecords.length == 1) {
-            return findLocationWithOneBeacon(scanRecords[0]);
+        if(validScanRecords == 1) {
+            return findLocationWithOneBeacon();
         } else {
-            double positions[][] = getPositions(scanRecords);
-            double distances[] = getDistances(scanRecords);
             Location retVal = new Location();
             LeastSquaresOptimizer.Optimum optimum;
 
@@ -54,16 +63,40 @@ public class LocationCalculator {
         }
     }
 
+    private static void filterScanRecords(BeaconPacketList[] scanRecords) {
+        double dirtyDistances[] = getDistances(scanRecords);
+        double dirtyPositions[][] = getPositions(scanRecords);
 
-    private static Location findLocationWithOneBeacon(BeaconPacketList scr) {
+        validScanRecords = 0;
+        for (double distance : dirtyDistances) {
+            if (!Double.isNaN(distance)) {
+                validScanRecords++;
+            }
+        }
+
+        distances = new double[validScanRecords];
+        positions = new double[validScanRecords][];
+
+        int j = 0;
+        for(int i = 0; i < dirtyDistances.length; i++) {
+            if( !Double.isNaN(dirtyDistances[i])) {
+                distances[j] = dirtyDistances[i];
+                positions[j] = dirtyPositions[i];
+                j++;
+            }
+        }
+    }
+
+
+    private static Location findLocationWithOneBeacon() {
         Location retVal = new Location();
-        retVal.setX(scr.getBeacon().getLocation().getX());
-        retVal.setY(scr.getBeacon().getLocation().getY());
-        retVal.setZ(scr.getBeacon().getLocation().getZ());
+        retVal.setX(positions[0][0]);
+        retVal.setY(positions[0][1]);
+        retVal.setZ(positions[0][2]);
         retVal.setTimestamp(System.currentTimeMillis());
-        retVal.setAccuracyX(scr.calculateDistance());
-        retVal.setAccuracyY(scr.calculateDistance());
-        retVal.setAccuracyZ(scr.calculateDistance());
+        retVal.setAccuracyX(distances[0]);
+        retVal.setAccuracyY(distances[0]);
+        retVal.setAccuracyZ(distances[0]);
         return retVal;
     }
 

@@ -9,7 +9,7 @@ public class BeaconPacketList{
     /**
      * Time window in which packets inside list are valid
      */
-    private final long TIME_WINDOW = 3000;
+    private final long TIME_WINDOW = 3 * 1000;
 
     private LinkedList<BeaconPacket> packets;
 
@@ -27,8 +27,7 @@ public class BeaconPacketList{
 
     public double calculateDistance() {
         long currentTime = System.currentTimeMillis();
-        double distance = 0;
-        int n = 0;
+        BeaconPacket bestRSSIPacket = null;
 
         for(int i = 0; i < packets.size(); i++) {
             BeaconPacket cur = packets.get(i);
@@ -36,12 +35,16 @@ public class BeaconPacketList{
                 packets.remove(i--);
                 continue;
             } else {
-                distance += cur.getDistance();
-                n++;
+                if(bestRSSIPacket == null || cur.getRssi() > bestRSSIPacket.getRssi())
+                bestRSSIPacket = cur;
             }
         }
 
-        return distance / n;
+        if(bestRSSIPacket == null) {
+            return Double.NaN;
+        } else {
+            return bestRSSIPacket.getDistance();
+        }
     }
 
     public BluetoothBeacon getBeacon() {
